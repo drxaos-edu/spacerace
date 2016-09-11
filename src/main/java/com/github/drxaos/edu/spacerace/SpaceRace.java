@@ -46,6 +46,9 @@ public class SpaceRace {
     // спрайты НЛО
     static Spriter.Sprite[] ufo = new Spriter.Sprite[10000];
 
+    // карта для разметки пути компьютера
+    static int[][] ai_map = new int[100][100];
+
     public static void main(String[] args) throws Exception {
 
         // TODO Отрефакторить логику игры, используя ООП и принципы S.O.L.I.D.
@@ -76,13 +79,17 @@ public class SpaceRace {
         // Координатные оси направлены вправо и вниз
         spriter.setViewportWidth(15);
         spriter.setViewportHeight(15);
+        //spriter.setViewportWidth(50);
+        //spriter.setViewportHeight(50);
 
         // Загружаем и показываем надпись "Loading..."
         spriter.setBackgroundColor(Color.BLACK);
         spriter.beginFrame();
-        spriter.createSprite(SpriterUtils.loadImageFromResource("/loading.png"), 367 / 2, 62 / 2, 5);
+        Spriter.Sprite loading = spriter.createSprite(SpriterUtils.loadImageFromResource("/loading.png"), 367 / 2, 62 / 2, 5);
         spriter.endFrame();
         spriter.pause(); // останавливаем отрисовку и загружаем все остальное
+
+        loading.setVisible(false);
 
         // Фон повторяется, чтобы заполнить все игровое поле
         BufferedImage background_image = SpriterUtils.loadImageFromResource("/background.jpg");
@@ -110,6 +117,7 @@ public class SpaceRace {
         Spriter.Sprite ufoPrototype = spriter.createSpriteProto(ufo_image, 45, 45).setWidth(1).setHeight(1).setLayer(LAYER_UFO);
         Spriter.Sprite wallPrototype = spriter.createSpriteProto(meteor_image, 50, 50).setWidth(1).setHeight(1).setLayer(LAYER_WALL);
         Spriter.Sprite starPrototype = spriter.createSpriteProto(star_image, 50, 50).setWidth(0.5).setHeight(0.5).setLayer(LAYER_STAR);
+        Spriter.Sprite trg = spriter.createSprite(SpriterUtils.loadImageFromResource("/point.png"), 256 / 2, 256 / 2, 0.5);
 
         // Корабли
         player_green = spriter.createSprite(player_green_image, 40, 50, 1).setLayer(LAYER_SHIP);
@@ -133,10 +141,12 @@ public class SpaceRace {
                 switch (type) {
                     case (0):
                         // Черный - Стена
-                        wallPrototype.createGhost().setPos(x, y).setAngle(Math.random() * Math.PI * 2).setVisible(true);
+                        wallPrototype.createGhost().setPos(x, y).setVisible(true);
                         wall_x[wall_counter] = x;
                         wall_y[wall_counter] = y;
                         wall_counter++;
+
+                        ai_map[x][y] = -1; // стена
                         break;
                     case (1):
                         // Красный - Красный корабль
@@ -159,11 +169,11 @@ public class SpaceRace {
                     case (3):
                         // Желтый - Звезды
                         // у всех звезд разный размер, поэтому вместо createGhost() - clone() (у каждой звезды своя копия изображения)
-                        starPrototype.clone().setPos(x, y).setAngle(Math.random() * Math.PI * 2).setWidthProportional(Math.random() * 0.4 + 0.4).setVisible(true);
+                        starPrototype.clone().setPos(x, y).setWidthProportional(Math.random() * 0.4 + 0.4).setVisible(true);
                         break;
                     case (4):
                         // Синий - НЛО
-                        ufo[ufo_counter] = ufoPrototype.createGhost().setPos(x, y).setAngle(Math.random() * Math.PI * 2).setVisible(true);
+                        ufo[ufo_counter] = ufoPrototype.createGhost().setPos(x, y).setVisible(true);
                         ufo_x[ufo_counter] = x;
                         ufo_y[ufo_counter] = y;
                         ufo_vx[ufo_counter] = 0;
@@ -171,24 +181,70 @@ public class SpaceRace {
                         ufo_counter++;
                         break;
                     case (5):
-                        // Фиолетовый - Фиолетовый корабль
+                        // Фиолетовый
                         break;
                     case (6):
                         // Голубой - Финиш
+                        ai_map[x][y] = 1; // цель
                         break;
                     case (7):
                         // Белый - Пусто
+                        ai_map[x][y] = 0; // неразмеченная клетка
                         break;
                 }
             }
         }
 
+        // Размечаем карту для управления кораблем компьютера
+        int cells = 1;
+        while (cells > 0) {
+            cells = 0; // если новых размеченных клеток не будет, значит надо выйти из цикла
+
+            for (int y = 1; y < 99; y++) {
+                for (int x = 1; x < 99; x++) {
+
+                    if (ai_map[x][y] < 0) {
+                        // стены пропускаем
+                        continue;
+                    }
+
+                    // если рядом есть пронумерованная клетка, то присваиваем текущей следующий номер
+
+                    int max = 0;
+
+                    // смотрим вправо, вниз, влево, вверх
+                    if (ai_map[x + 1][y + 0] > max) {
+                        max = ai_map[x + 1][y + 0];
+                    }
+                    if (ai_map[x + 0][y + 1] > max) {
+                        max = ai_map[x + 0][y + 1];
+                    }
+                    if (ai_map[x - 1][y + 0] > max) {
+                        max = ai_map[x - 1][y + 0];
+                    }
+                    if (ai_map[x + 0][y - 1] > max) {
+                        max = ai_map[x + 0][y - 1];
+                    }
+
+                    if (max > 0 && ai_map[x][y] == 0) {
+                        ai_map[x][y] = max + 1;
+                        cells++;
+                    }
+                }
+            }
+        }
+
+//        Вывод карты на консоль
+//        for (int y = 0; y < 100; y++) {
+//            for (int x = 0; x < 100; x++) {
+//                System.out.print(String.format("%03d", ai_map[x][y]) + " ");
+//            }
+//            System.out.println();
+//        }
+
 
         // Объект для считывания клавиш, нажимаемых пользователем
         Spriter.Control control = spriter.getControl();
-
-        // Если отрисовка тормозит, то можно не выставлять случайные углы объектам (setAngle) - это значительно ускорит игру
-        spriter.setDebug(true);
 
         // Отрисовываем все что загрузили
         spriter.unpause();
@@ -221,13 +277,113 @@ public class SpaceRace {
             player_y += player_vy;
             player_green.setPos(player_x, player_y);
 
+            // Камера следует за игроком
+            spriter.setViewportShift(player_x, player_y);
+
+            // Искусственно уменьшаем отрыв компьютера от игрока, чтобы было интереснее играть
+            int player_step = ai_map[(int) Math.round(player_x)][(int) Math.round(player_y)];
+            int computer_step = ai_map[(int) Math.round(computer_x)][(int) Math.round(computer_y)];
+            if (computer_step - player_step > 20) {
+                double deltaX = computer_x - player_x;
+                double deltaY = computer_y - player_y;
+                double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                if (distance > 15) { // корабль компьютера сейчас не видно
+                    computer_step = player_step + 20; // надо отставать не больше чем на 20 шагов
+                    // ищем подходящее место для телепортации
+                    for (int x = 1; x < 99; x++) {
+                        for (int y = 1; y < 99; y++) {
+                            if (ai_map[x][y] == computer_step) {
+                                deltaX = x - player_x;
+                                deltaY = y - player_y;
+                                distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                                if (distance > 15) { // только если игрок не видит эту клетку
+                                    computer_x = x;
+                                    computer_y = y;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Корабль компьютера ищет минимальный номер в прямой видимости
+            int target_x = 0;
+            int target_y = 0;
+            int min = Integer.MAX_VALUE;
+            // смотрим в разные стороны и ищем минимальный номер
+            for (int a = 0; a < 18; a++) { // 18 шагов по 20 градусов
+                double search_x = computer_x;
+                double search_y = computer_y;
+                while (true) {
+                    int sx = (int) Math.round(search_x);
+                    int sy = (int) Math.round(search_y);
+                    if (ai_map[sx][sy] < 0) {
+                        // стена, дельше не смотрим
+                        break;
+                    }
+                    if (ai_map[sx][sy] < min) {
+                        // запоминаем минимум
+                        min = ai_map[sx][sy];
+                        target_x = sx;
+                        target_y = sy;
+                    }
+                    // продвигаемся в выбранном направлении
+                    search_x += Math.cos(Math.PI * 2 / 18 * a) * 0.3;
+                    search_y += Math.sin(Math.PI * 2 / 18 * a) * 0.3;
+                }
+            }
+            // Цель компьютера (для отладки)
+            //trg.setPos(target_x, target_y).setVisible(true);
+
+            // текущая скорость
+            double computer_current_velocity = Math.sqrt(computer_vx * computer_vx + computer_vy * computer_vy);
+            double computer_current_velocity_angle = Math.atan2(computer_vy, computer_vx);
+
+            // азимут до цели
+            double target_angle = Math.atan2(target_y - computer_y, target_x - computer_x);
+
+            // поправка от текущего угла
+            double angle_shift = target_angle - computer_a;
+
+            // поправка от текущего угла скорости
+            double velocity_angle_shift = target_angle - computer_current_velocity_angle;
+
+            // нормализуем поправку
+            while (angle_shift > Math.PI) {
+                angle_shift -= Math.PI * 2;
+            }
+            while (angle_shift < -Math.PI) {
+                angle_shift += Math.PI * 2;
+            }
+
+            if (angle_shift > 0.1) {
+                // направо
+                computer_a += 0.06;
+            }
+            if (angle_shift < -0.1) {
+                // налево
+                computer_a -= 0.06;
+            }
+            // ускоряемся, если скорость < 0.3 или если она направлена не на цель
+            boolean should_accelerate = (computer_current_velocity < 0.3 || Math.cos(velocity_angle_shift) < 0.6);
+            if (Math.abs(angle_shift) < Math.PI / 4 && should_accelerate) {
+                // угол незначительный, можно включать ускорение
+                computer_vx += Math.cos(computer_a) * 0.005;
+                computer_vy += Math.sin(computer_a) * 0.005;
+                player_red_tail.setVisible(true);
+            } else {
+                // нет ускорения - нет шлейфа
+                player_red_tail.setVisible(false);
+            }
+            player_red.setAngle(computer_a);
+
             // Двигаем корабль компьютера
             computer_x += computer_vx;
             computer_y += computer_vy;
             player_red.setPos(computer_x, computer_y);
 
-            // Камера следует за игроком
-            spriter.setViewportShift(player_x, player_y);
+            // Наблюдение за кораблем компьютера (для отладки)
+            //spriter.setViewportShift(computer_x, computer_y);
 
             // Столкновения игрока с астероидами
             for (int i = 0; i < wall_counter; i++) {
