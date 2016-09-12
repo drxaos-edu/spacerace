@@ -196,6 +196,8 @@ public class SpaceRace {
         }
 
         // Размечаем карту для управления кораблем компьютера
+        // Применен "Волновой алгоритм" для окрестности фон Неймана
+        // https://ru.wikipedia.org/wiki/%D0%90%D0%BB%D0%B3%D0%BE%D1%80%D0%B8%D1%82%D0%BC_%D0%9B%D0%B8
         int cells = 1;
         while (cells > 0) {
             cells = 0; // если новых размеченных клеток не будет, значит надо выйти из цикла
@@ -204,30 +206,29 @@ public class SpaceRace {
                 for (int x = 1; x < 99; x++) {
 
                     if (ai_map[x][y] < 0) {
-                        // стены пропускаем
+                        // -1 - это стены, пропускаем
                         continue;
                     }
 
-                    // если рядом есть пронумерованная клетка, то присваиваем текущей следующий номер
-
-                    int max = 0;
+                    // ищем рядом наименьшую пронумерованную клетку, и присваиваем текущей следующий номер
+                    int min = Integer.MAX_VALUE;
 
                     // смотрим вправо, вниз, влево, вверх
-                    if (ai_map[x + 1][y + 0] > max) {
-                        max = ai_map[x + 1][y + 0];
+                    if (ai_map[x + 1][y + 0] > 0 && ai_map[x + 1][y + 0] < min) {
+                        min = ai_map[x + 1][y + 0];
                     }
-                    if (ai_map[x + 0][y + 1] > max) {
-                        max = ai_map[x + 0][y + 1];
+                    if (ai_map[x + 0][y + 1] > 0 && ai_map[x + 0][y + 1] < min) {
+                        min = ai_map[x + 0][y + 1];
                     }
-                    if (ai_map[x - 1][y + 0] > max) {
-                        max = ai_map[x - 1][y + 0];
+                    if (ai_map[x - 1][y + 0] > 0 && ai_map[x - 1][y + 0] < min) {
+                        min = ai_map[x - 1][y + 0];
                     }
-                    if (ai_map[x + 0][y - 1] > max) {
-                        max = ai_map[x + 0][y - 1];
+                    if (ai_map[x + 0][y - 1] > 0 && ai_map[x + 0][y - 1] < min) {
+                        min = ai_map[x + 0][y - 1];
                     }
 
-                    if (max > 0 && ai_map[x][y] == 0) {
-                        ai_map[x][y] = max + 1;
+                    if (min > 0 && min < Integer.MAX_VALUE && ai_map[x][y] == 0) {
+                        ai_map[x][y] = min + 1;
                         cells++;
                     }
                 }
