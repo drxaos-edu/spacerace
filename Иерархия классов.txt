@@ -1,0 +1,28 @@
+com.github.drxaos.edu.pilots
+    |
+    |- Pilot
+        |
+        |- AiPilot
+        
+com.github.drxaos.edu.sourcedata
+    |
+    |- IImageSource - ImageSource
+    |
+    |- ISpriteSource - SpriteSource
+    
+com.github.drxaos.edu.spacerace
+    |
+    |- IPhysicsLaw - PhysicsLaw
+    |
+    |- Painter
+    |
+    |- SpaceRace
+    
+com.github.drxaos.edu.spacerace.spaceobjects
+    |
+    |- SpaceObject
+        |
+        |- MovableSpaceObject
+            |
+            |- SpaceShip
+    
