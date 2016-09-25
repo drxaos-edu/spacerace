@@ -10,21 +10,37 @@ import java.io.IOException;
 /**
  * Created by kotvaska on 25.09.2016.
  */
-public class UserPlayer implements Creator {
+public class BaseSprite implements Creator {
     private String imgName;
     private int layer;
     private BufferedImage img;
     private Spriter.Sprite sprite;
+    private double imageCenterX;
+    private double imageCenterY;
+    private double objectWidth;
+    private double objectHeight;
 
-    public UserPlayer(String img, int layer) {
+    public BaseSprite(String img, int layer, double imageCenterX, double imageCenterY,
+                      double objectWidth, double objectHeight) {
         this.imgName = img;
         this.layer = layer;
+        this.imageCenterX = imageCenterX;
+        this.imageCenterY = imageCenterY;
+        this.objectWidth = objectWidth;
+        this.objectHeight = objectHeight;
         setImg();
     }
 
     @Override
     public void add(Spriter spriter) {
-        sprite = spriter.createSprite(getImg(), 40, 50, 1).setLayer(layer);
+        sprite = spriter.createSprite(getImg(), imageCenterX, imageCenterY, objectWidth).setLayer(layer);
+    }
+
+    public void addProto(Spriter spriter) {
+        sprite = spriter.createSpriteProto(getImg(), imageCenterX, imageCenterY)
+                .setWidth(objectWidth)
+                .setHeight(objectHeight)
+                .setLayer(layer);
     }
 
     public BufferedImage getImg() {

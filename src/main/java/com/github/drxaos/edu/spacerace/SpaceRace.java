@@ -1,7 +1,8 @@
 package com.github.drxaos.edu.spacerace;
 
+import com.github.drxaos.edu.spacerace.controllers.BaseControls;
 import com.github.drxaos.edu.spacerace.controllers.MapCreator;
-import com.github.drxaos.edu.spacerace.models.UserPlayer;
+import com.github.drxaos.edu.spacerace.models.BaseSprite;
 import com.github.drxaos.spriter.Spriter;
 import com.github.drxaos.spriter.SpriterUtils;
 
@@ -69,21 +70,20 @@ public class SpaceRace {
         }
 
         // Загружаем картинки
-        UserPlayer player_green = new UserPlayer("/player-green.png", LAYER_SHIP);
-        UserPlayer player_red = new UserPlayer("/player-red.png", LAYER_SHIP);
-        //Ufo ufo = new Ufo();
-
         BufferedImage tail_image = SpriterUtils.loadImageFromResource("/tail.png");
-        BufferedImage ufo_image = SpriterUtils.loadImageFromResource("/ufo.png");
-        BufferedImage star_image = SpriterUtils.loadImageFromResource("/star.png");
-        BufferedImage meteor_image = SpriterUtils.loadImageFromResource("/meteor.png");
         BufferedImage map_image = SpriterUtils.loadImageFromResource("/map.png");
+        Spriter.Sprite trg = spriter.createSprite(SpriterUtils.loadImageFromResource("/point.png"), 256 / 2, 256 / 2, 0.5);
 
         // Объекты
-        Spriter.Sprite ufoPrototype = spriter.createSpriteProto(ufo_image, 45, 45).setWidth(1).setHeight(1).setLayer(LAYER_UFO);
-        Spriter.Sprite wallPrototype = spriter.createSpriteProto(meteor_image, 50, 50).setWidth(1).setHeight(1).setLayer(LAYER_WALL);
-        Spriter.Sprite starPrototype = spriter.createSpriteProto(star_image, 50, 50).setWidth(0.5).setHeight(0.5).setLayer(LAYER_STAR);
-        Spriter.Sprite trg = spriter.createSprite(SpriterUtils.loadImageFromResource("/point.png"), 256 / 2, 256 / 2, 0.5);
+        BaseSprite player_green = new BaseSprite("/player-green.png", LAYER_SHIP, 40, 50, 1, 1);
+        BaseSprite player_red = new BaseSprite("/player-red.png", LAYER_SHIP, 40, 50, 1, 1);
+        BaseSprite ufoSprite = new BaseSprite("/ufo.png", LAYER_UFO, 45, 45, 1, 1);
+        BaseSprite starSprite = new BaseSprite("/star.png", LAYER_STAR, 50, 50, 0.5, 0.5);
+        BaseSprite meteorSprite = new BaseSprite("/meteor.png", LAYER_WALL, 50, 50, 1, 1);
+
+        ufoSprite.addProto(spriter);
+        starSprite.addProto(spriter);
+        meteorSprite.addProto(spriter);
 
         // Корабли
         player_green.add(spriter);
@@ -95,7 +95,7 @@ public class SpaceRace {
         player_green_tail = tailPrototype.clone().setParent(player_green.getSprite()).setVisible(true);
         player_red_tail = tailPrototype.clone().setParent(player_red.getSprite()).setVisible(true);
 
-        MapCreator mapCreator = new MapCreator(map_image, wallPrototype, starPrototype, ufoPrototype);
+        MapCreator mapCreator = new MapCreator(map_image, meteorSprite.getSprite(), starSprite.getSprite(), ufoSprite.getSprite());
         mapCreator.add(spriter);
 
         // Объект для считывания клавиш, нажимаемых пользователем
@@ -107,25 +107,11 @@ public class SpaceRace {
         while (true) {
             spriter.beginFrame(); // синхронизация логики и потока отрисовки, чтобы не было графических "артефактов"
 
-            if (control.isKeyDown(KeyEvent.VK_LEFT)) {
-                // влево
-                player_a -= 0.06;
-                player_green.getSprite().setAngle(player_a);
+            BaseControls baseControls = new BaseControls(player_green);
+            if (control.isKeyDown(KeyEvent.VK_LEFT) || control.isKeyDown(KeyEvent.VK_RIGHT)) {
+                baseControls.setDirection(KeyEvent.KEY_PRESSED);
             }
-            if (control.isKeyDown(KeyEvent.VK_RIGHT)) {
-                // вправо
-                player_a += 0.06;
-                player_green.getSprite().setAngle(player_a);
-            }
-            if (control.isKeyDown(KeyEvent.VK_UP)) {
-                // ускорение
-                player_vx += Math.cos(player_a) * 0.005;
-                player_vy += Math.sin(player_a) * 0.005;
-                player_green_tail.setVisible(true);
-            } else {
-                // нет ускорения - нет шлейфа
-                player_green_tail.setVisible(false);
-            }
+            baseControls.setAcceleration(control.isKeyDown(KeyEvent.VK_UP));
 
             // Двигаем корабль игрока
             player_x += player_vx;
