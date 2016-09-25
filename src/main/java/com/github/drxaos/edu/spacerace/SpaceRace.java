@@ -1,5 +1,7 @@
 package com.github.drxaos.edu.spacerace;
 
+import com.github.drxaos.edu.spacerace.controllers.MapCreator;
+import com.github.drxaos.edu.spacerace.models.UserPlayer;
 import com.github.drxaos.spriter.Spriter;
 import com.github.drxaos.spriter.SpriterUtils;
 
@@ -7,47 +9,9 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 
+import static com.github.drxaos.edu.spacerace.models.Core.*;
+
 public class SpaceRace {
-
-    // при наложении спрайты с меньшим номером слоя перекрываются спрайтами с большим номером слоя
-    final static int
-            LAYER_BG = 0,
-            LAYER_STAR = LAYER_BG + 50,
-            LAYER_OBJECTS = 500,
-            LAYER_SHIP = LAYER_OBJECTS,
-            LAYER_SHIP_TAIL = LAYER_SHIP - 100,
-            LAYER_WALL = LAYER_OBJECTS,
-            LAYER_UFO = LAYER_WALL + 50;
-
-    // углы, координаты, скорости кораблей
-    static double
-            player_a, player_x, player_y, player_vx, player_vy,
-            computer_a, computer_x, computer_y, computer_vx, computer_vy;
-
-    // спрайты кораблей
-    static Spriter.Sprite
-            player_green,
-            player_green_tail,
-            player_red,
-            player_red_tail;
-
-    // коордитаны астероидов
-    static double[]
-            wall_x = new double[10000],
-            wall_y = new double[10000];
-
-    // коордитаны и скорости НЛО
-    static double[]
-            ufo_x = new double[10000],
-            ufo_y = new double[10000],
-            ufo_vx = new double[10000],
-            ufo_vy = new double[10000];
-
-    // спрайты НЛО
-    static Spriter.Sprite[] ufo = new Spriter.Sprite[10000];
-
-    // карта для разметки пути компьютера
-    static int[][] ai_map = new int[100][100];
 
     public static void main(String[] args) throws Exception {
 
@@ -105,8 +69,10 @@ public class SpaceRace {
         }
 
         // Загружаем картинки
-        BufferedImage player_green_image = SpriterUtils.loadImageFromResource("/player-green.png");
-        BufferedImage player_red_image = SpriterUtils.loadImageFromResource("/player-red.png");
+        UserPlayer player_green = new UserPlayer("/player-green.png", LAYER_SHIP);
+        UserPlayer player_red = new UserPlayer("/player-red.png", LAYER_SHIP);
+        //Ufo ufo = new Ufo();
+
         BufferedImage tail_image = SpriterUtils.loadImageFromResource("/tail.png");
         BufferedImage ufo_image = SpriterUtils.loadImageFromResource("/ufo.png");
         BufferedImage star_image = SpriterUtils.loadImageFromResource("/star.png");
@@ -120,129 +86,17 @@ public class SpaceRace {
         Spriter.Sprite trg = spriter.createSprite(SpriterUtils.loadImageFromResource("/point.png"), 256 / 2, 256 / 2, 0.5);
 
         // Корабли
-        player_green = spriter.createSprite(player_green_image, 40, 50, 1).setLayer(LAYER_SHIP);
-        player_red = spriter.createSprite(player_red_image, 40, 50, 1).setLayer(LAYER_SHIP);
+        player_green.add(spriter);
+        player_red.add(spriter);
 
         // Шлейфы кораблей
         Spriter.Sprite tailPrototype = spriter.createSpriteProto(tail_image, 41, 8).setWidth(0.4).setHeight(0.2).setX(-0.2).setLayer(LAYER_SHIP_TAIL);
         // setParent закрепляет спрайт на другом спрайте и центром координат для него становится середина родительского
-        player_green_tail = tailPrototype.clone().setParent(player_green).setVisible(true);
-        player_red_tail = tailPrototype.clone().setParent(player_red).setVisible(true);
+        player_green_tail = tailPrototype.clone().setParent(player_green.getSprite()).setVisible(true);
+        player_red_tail = tailPrototype.clone().setParent(player_red.getSprite()).setVisible(true);
 
-        // Загружаем карту и расставляем объекты
-        int wall_counter = 0;
-        int ufo_counter = 0;
-        for (int y = 0; y < 100; y++) {
-            for (int x = 0; x < 100; x++) {
-                int[] pixel = new int[4]; // RGBA
-                map_image.getData().getPixel(x, y, pixel);
-                // схлапываем RGB-составляющие цвета в 3-битное число
-                int type = (pixel[0] & 1) + ((pixel[1] & 1) << 1) + ((pixel[2] & 1) << 2);
-                switch (type) {
-                    case (0):
-                        // Черный - Стена
-                        wallPrototype.createGhost().setPos(x, y).setVisible(true);
-                        wall_x[wall_counter] = x;
-                        wall_y[wall_counter] = y;
-                        wall_counter++;
-
-                        ai_map[x][y] = -1; // стена
-                        break;
-                    case (1):
-                        // Красный - Красный корабль
-                        player_red.setPos(x, y);
-                        computer_a = -Math.PI / 2;
-                        computer_x = x;
-                        computer_y = y;
-                        computer_vx = 0;
-                        computer_vy = 0;
-                        break;
-                    case (2):
-                        // Зеленый - Зеленый корабль
-                        player_green.setPos(x, y).setAngle(-Math.PI / 2);
-                        player_a = -Math.PI / 2;
-                        player_x = x;
-                        player_y = y;
-                        player_vx = 0;
-                        player_vy = 0;
-                        break;
-                    case (3):
-                        // Желтый - Звезды
-                        // у всех звезд разный размер, поэтому вместо createGhost() - clone() (у каждой звезды своя копия изображения)
-                        starPrototype.clone().setPos(x, y).setWidthProportional(Math.random() * 0.4 + 0.4).setVisible(true);
-                        break;
-                    case (4):
-                        // Синий - НЛО
-                        ufo[ufo_counter] = ufoPrototype.createGhost().setPos(x, y).setVisible(true);
-                        ufo_x[ufo_counter] = x;
-                        ufo_y[ufo_counter] = y;
-                        ufo_vx[ufo_counter] = 0;
-                        ufo_vy[ufo_counter] = 0;
-                        ufo_counter++;
-                        break;
-                    case (5):
-                        // Фиолетовый
-                        break;
-                    case (6):
-                        // Голубой - Финиш
-                        ai_map[x][y] = 1; // цель
-                        break;
-                    case (7):
-                        // Белый - Пусто
-                        ai_map[x][y] = 0; // неразмеченная клетка
-                        break;
-                }
-            }
-        }
-
-        // Размечаем карту для управления кораблем компьютера
-        // Применен "Волновой алгоритм" для окрестности фон Неймана
-        // https://ru.wikipedia.org/wiki/%D0%90%D0%BB%D0%B3%D0%BE%D1%80%D0%B8%D1%82%D0%BC_%D0%9B%D0%B8
-        int cells = 1;
-        while (cells > 0) {
-            cells = 0; // если новых размеченных клеток не будет, значит надо выйти из цикла
-
-            for (int y = 1; y < 99; y++) {
-                for (int x = 1; x < 99; x++) {
-
-                    if (ai_map[x][y] < 0) {
-                        // -1 - это стены, пропускаем
-                        continue;
-                    }
-
-                    // ищем рядом наименьшую пронумерованную клетку, и присваиваем текущей следующий номер
-                    int min = Integer.MAX_VALUE;
-
-                    // смотрим вправо, вниз, влево, вверх
-                    if (ai_map[x + 1][y + 0] > 0 && ai_map[x + 1][y + 0] < min) {
-                        min = ai_map[x + 1][y + 0];
-                    }
-                    if (ai_map[x + 0][y + 1] > 0 && ai_map[x + 0][y + 1] < min) {
-                        min = ai_map[x + 0][y + 1];
-                    }
-                    if (ai_map[x - 1][y + 0] > 0 && ai_map[x - 1][y + 0] < min) {
-                        min = ai_map[x - 1][y + 0];
-                    }
-                    if (ai_map[x + 0][y - 1] > 0 && ai_map[x + 0][y - 1] < min) {
-                        min = ai_map[x + 0][y - 1];
-                    }
-
-                    if (min > 0 && min < Integer.MAX_VALUE && ai_map[x][y] == 0) {
-                        ai_map[x][y] = min + 1;
-                        cells++;
-                    }
-                }
-            }
-        }
-
-//        Вывод карты на консоль
-//        for (int y = 0; y < 100; y++) {
-//            for (int x = 0; x < 100; x++) {
-//                System.out.print(String.format("%03d", ai_map[x][y]) + " ");
-//            }
-//            System.out.println();
-//        }
-
+        MapCreator mapCreator = new MapCreator(map_image, wallPrototype, starPrototype, ufoPrototype);
+        mapCreator.add(spriter);
 
         // Объект для считывания клавиш, нажимаемых пользователем
         Spriter.Control control = spriter.getControl();
@@ -256,12 +110,12 @@ public class SpaceRace {
             if (control.isKeyDown(KeyEvent.VK_LEFT)) {
                 // влево
                 player_a -= 0.06;
-                player_green.setAngle(player_a);
+                player_green.getSprite().setAngle(player_a);
             }
             if (control.isKeyDown(KeyEvent.VK_RIGHT)) {
                 // вправо
                 player_a += 0.06;
-                player_green.setAngle(player_a);
+                player_green.getSprite().setAngle(player_a);
             }
             if (control.isKeyDown(KeyEvent.VK_UP)) {
                 // ускорение
@@ -276,7 +130,7 @@ public class SpaceRace {
             // Двигаем корабль игрока
             player_x += player_vx;
             player_y += player_vy;
-            player_green.setPos(player_x, player_y);
+            player_green.getSprite().setPos(player_x, player_y);
 
             // Камера следует за игроком
             spriter.setViewportShift(player_x, player_y);
@@ -376,18 +230,18 @@ public class SpaceRace {
                 // нет ускорения - нет шлейфа
                 player_red_tail.setVisible(false);
             }
-            player_red.setAngle(computer_a);
+            player_red.getSprite().setAngle(computer_a);
 
             // Двигаем корабль компьютера
             computer_x += computer_vx;
             computer_y += computer_vy;
-            player_red.setPos(computer_x, computer_y);
+            player_red.getSprite().setPos(computer_x, computer_y);
 
             // Наблюдение за кораблем компьютера (для отладки)
             //spriter.setViewportShift(computer_x, computer_y);
 
             // Столкновения игрока с астероидами
-            for (int i = 0; i < wall_counter; i++) {
+            for (int i = 0; i < mapCreator.getWall_counter(); i++) {
                 double deltaX = wall_x[i] - player_x;
                 double deltaY = wall_y[i] - player_y;
                 double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -411,7 +265,7 @@ public class SpaceRace {
             }
 
             // Столкновения игрока с НЛО
-            for (int i = 0; i < ufo_counter; i++) {
+            for (int i = 0; i < mapCreator.getUfo_counter(); i++) {
                 double deltaX = ufo_x[i] - player_x;
                 double deltaY = ufo_y[i] - player_y;
                 double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -438,7 +292,7 @@ public class SpaceRace {
             }
 
             // Столкновения компьютера с астероидами
-            for (int i = 0; i < wall_counter; i++) {
+            for (int i = 0; i < mapCreator.getWall_counter(); i++) {
                 double deltaX = wall_x[i] - computer_x;
                 double deltaY = wall_y[i] - computer_y;
                 double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -462,7 +316,7 @@ public class SpaceRace {
             }
 
             // Столкновения компьютера с НЛО
-            for (int i = 0; i < ufo_counter; i++) {
+            for (int i = 0; i < mapCreator.getUfo_counter(); i++) {
                 double deltaX = ufo_x[i] - computer_x;
                 double deltaY = ufo_y[i] - computer_y;
                 double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -514,7 +368,7 @@ public class SpaceRace {
                 player_vy *= 0.7;
             }
 
-            for (int i = 0; i < ufo_counter; i++) {
+            for (int i = 0; i < mapCreator.getUfo_counter(); i++) {
                 // Двигаем НЛО
                 ufo_x[i] += ufo_vx[i];
                 ufo_y[i] += ufo_vy[i];
