@@ -6,6 +6,7 @@ import com.github.drxaos.spriter.SpriterUtils;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+import java.util.concurrent.TimeUnit;
 
 public class SpaceRace {
 
@@ -141,7 +142,7 @@ public class SpaceRace {
                 switch (type) {
                     case (0):
                         // Черный - Стена
-                        wallPrototype.createGhost().setPos(x, y).setVisible(true);
+                        wallPrototype.createGhost().setPos(x, y).setAngle(Math.PI * 2 * Math.random()).setVisible(true);
                         wall_x[wall_counter] = x;
                         wall_y[wall_counter] = y;
                         wall_counter++;
@@ -169,11 +170,11 @@ public class SpaceRace {
                     case (3):
                         // Желтый - Звезды
                         // у всех звезд разный размер, поэтому вместо createGhost() - clone() (у каждой звезды своя копия изображения)
-                        starPrototype.clone().setPos(x, y).setWidthProportional(Math.random() * 0.4 + 0.4).setVisible(true);
+                        starPrototype.clone().setPos(x, y).setAngle(Math.PI * 2 * Math.random()).setWidthProportional(Math.random() * 0.4 + 0.4).setVisible(true);
                         break;
                     case (4):
                         // Синий - НЛО
-                        ufo[ufo_counter] = ufoPrototype.createGhost().setPos(x, y).setVisible(true);
+                        ufo[ufo_counter] = ufoPrototype.createGhost().setPos(x, y).setAngle(Math.PI * 2 * Math.random()).setVisible(true);
                         ufo_x[ufo_counter] = x;
                         ufo_y[ufo_counter] = y;
                         ufo_vx[ufo_counter] = 0;
@@ -242,6 +243,7 @@ public class SpaceRace {
 //            System.out.println();
 //        }
 
+        spriter.setDebug(true);
 
         // Объект для считывания клавиш, нажимаемых пользователем
         Spriter.Control control = spriter.getControl();
@@ -524,7 +526,8 @@ public class SpaceRace {
             }
 
             spriter.endFrame(); // конец синхронизации
-            Thread.sleep(30);
+
+            TimeUnit.MILLISECONDS.sleep(25);
         }
     }
 }
