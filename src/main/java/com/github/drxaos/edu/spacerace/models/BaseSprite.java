@@ -19,6 +19,10 @@ public class BaseSprite implements Creator {
     private double imageCenterY;
     private double objectWidth;
     private double objectHeight;
+    private double width;
+    private double height;
+    private double x;
+    private double y;
 
     public BaseSprite(String img) {
         this.imgName = img;
@@ -27,6 +31,10 @@ public class BaseSprite implements Creator {
         imageCenterY = -1.0;
         objectWidth = -1.0;
         objectHeight = -1.0;
+        width = -1.0;
+        height = -1.0;
+        x = -1.0;
+        y = -1.0;
         setImg();
     }
 
@@ -37,6 +45,15 @@ public class BaseSprite implements Creator {
         } else {
             sprite = spriter.createSprite(getImg(), imageCenterX, imageCenterY, objectWidth);
         }
+    }
+
+    public void addProtoWithAllSetProperties(Spriter spriter) {
+        sprite = spriter.createSpriteProto(getImg(), imageCenterX, imageCenterY);
+        if (width != -1) sprite.setWidth(width);
+        if (height != -1) sprite.setHeight(height);
+        if (x != -1) sprite.setX(x);
+        if (y != -1) sprite.setY(y);
+        if (layer != -1) sprite.setLayer(layer);
     }
 
     public void addProto(Spriter spriter) {
@@ -60,6 +77,14 @@ public class BaseSprite implements Creator {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void makeVisible(int x, int y) {
+        sprite.createGhost().setPos(x, y).setVisible(true);
+    }
+
+    public void makeVisibleClone(int x, int y, double w) {
+        sprite.clone().setPos(x, y).setWidthProportional(w).setVisible(true);
     }
 
     public void setSprite(Spriter.Sprite sprite) {
@@ -88,5 +113,37 @@ public class BaseSprite implements Creator {
 
     public void setObjectHeight(double objectHeight) {
         this.objectHeight = objectHeight;
+    }
+
+    public double getWidth() {
+        return width;
+    }
+
+    public void setWidth(double width) {
+        this.width = width;
+    }
+
+    public double getHeight() {
+        return height;
+    }
+
+    public void setHeight(double height) {
+        this.height = height;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+    public void setY(double y) {
+        this.y = y;
+    }
+
+    public double getX() {
+        return x;
+    }
+
+    public void setX(double x) {
+        this.x = x;
     }
 }
