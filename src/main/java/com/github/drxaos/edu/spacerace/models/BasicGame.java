@@ -39,6 +39,10 @@ public class BasicGame {
         spriter.pause();
     }
 
+    public void playDraw() {
+        spriter.unpause();
+    }
+
     public void setBackground(Color background) {
         spriter.setBackgroundColor(Color.BLACK);
     }
