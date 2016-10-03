@@ -3,6 +3,7 @@ package com.github.drxaos.edu.spacerace;
 import com.github.drxaos.edu.spacerace.controllers.BaseControls;
 import com.github.drxaos.edu.spacerace.controllers.MapCreator;
 import com.github.drxaos.edu.spacerace.models.BaseSprite;
+import com.github.drxaos.edu.spacerace.models.BasicGame;
 import com.github.drxaos.spriter.Spriter;
 import com.github.drxaos.spriter.SpriterUtils;
 
@@ -40,33 +41,43 @@ public class SpaceRace {
         объекта, программа рисует соответствующее изображение на экране в позиции (x,y) образца объекта.
         Если спрайт имеет кадры, то они последовательно повторяются, чтобы получить эффект анимации. */
 
-        Spriter spriter = new Spriter("Space Race");
+        BasicGame game = new BasicGame(new Spriter(GAME_NAME));
         // Размер окна 15x15, размер корабля или предмета 1x1, размер игрового поля 100x100
         // Координатные оси направлены вправо и вниз
-        spriter.setViewportWidth(15);
-        spriter.setViewportHeight(15);
+        game.setWindowSize(15, 15);
         //spriter.setViewportWidth(50);
         //spriter.setViewportHeight(50);
 
         // Загружаем и показываем надпись "Loading..."
-        spriter.setBackgroundColor(Color.BLACK);
-        spriter.beginFrame();
-        Spriter.Sprite loading = spriter.createSprite(SpriterUtils.loadImageFromResource("/loading.png"), 367 / 2, 62 / 2, 5);
-        spriter.endFrame();
-        spriter.pause(); // останавливаем отрисовку и загружаем все остальное
+        game.setBackground(Color.BLACK);
+        game.startDraw();
 
-        loading.setVisible(false);
+        BaseSprite loading = new BaseSprite("/loading.png");
+        loading.setImageCenterX(367 / 2);
+        loading.setImageCenterY(62 / 2);
+        loading.setObjectWidth(5);
+        loading.add(game.getSpriter());
+
+        game.stopDraw();
+        game.pauseDraw();
+
+        loading.getSprite().setVisible(false);
 
         // Фон повторяется, чтобы заполнить все игровое поле
-        BufferedImage background_image = SpriterUtils.loadImageFromResource("/background.jpg");
         // Создаем прототип спрайта, устанавливаем размеры и помещаем на фоновый слой
-        Spriter.Sprite background = spriter.createSpriteProto(background_image, 512, 512).setWidth(25).setHeight(25).setLayer(LAYER_BG);
+        BaseSprite background = new BaseSprite("/background.jpg");
+        background.setLayer(LAYER_BG);
+        background.setImageCenterX(512);
+        background.setImageCenterY(512);
+        background.setWidth(25);
+        background.setHeight(25);
+        background.addProtoWithAllSetProperties(game.getSpriter());
         for (int x = 0; x <= 100; x += 25) {
             for (int y = 0; y <= 100; y += 25) {
                 // Создаем "облегченный" экземпляр спрайта фона и ставим в координаты x,y
                 // ("облегченный" - означает, что изображение одно для всех копии, для экономии памяти)
                 // Прототипы по-умолчанию невидимы, поэтому устанавливаем флаг видимости в true
-                background.createGhost().setPos(x, y).setVisible(true);
+                background.makeVisible(x, y);
             }
         }
 
@@ -77,7 +88,7 @@ public class SpaceRace {
         trg.setImageCenterX(256 / 2);
         trg.setImageCenterY(256 / 2);
         trg.setObjectWidth(0.5);
-        trg.add(spriter);
+        trg.add(game.getSpriter());
 
         // Объекты
         BaseSprite player_green = new BaseSprite("/player-green.png");
@@ -111,38 +122,43 @@ public class SpaceRace {
         meteorSprite.setObjectWidth(1);
         meteorSprite.setObjectHeight(1);
 
-        ufoSprite.addProto(spriter);
-        starSprite.addProto(spriter);
-        meteorSprite.addProto(spriter);
+        ufoSprite.addProto(game.getSpriter());
+        starSprite.addProto(game.getSpriter());
+        meteorSprite.addProto(game.getSpriter());
 
         // Корабли
-        player_green.add(spriter);
-        player_red.add(spriter);
+        player_green.add(game.getSpriter());
+        player_red.add(game.getSpriter());
 
         // Шлейфы кораблей
         BaseSprite tailPrototype = new BaseSprite("/tail.png");
-        player_green.setLayer(LAYER_SHIP_TAIL);
-        tailPrototype.setSprite(spriter.createSpriteProto(tail_image, 41, 8).setWidth(0.4).setHeight(0.2).setX(-0.2).setLayer(LAYER_SHIP_TAIL));
+        tailPrototype.setLayer(LAYER_SHIP_TAIL);
+        meteorSprite.setImageCenterX(41);
+        meteorSprite.setImageCenterY(8);
+        meteorSprite.setWidth(0.4);
+        meteorSprite.setHeight(0.2);
+        meteorSprite.setX(-0.2);
+        tailPrototype.addProtoWithAllSetProperties(game.getSpriter());
 
         // setParent закрепляет спрайт на другом спрайте и центром координат для него становится середина родительского
         player_green_tail = tailPrototype.getSprite().clone().setParent(player_green.getSprite()).setVisible(true);
         player_red_tail = tailPrototype.getSprite().clone().setParent(player_red.getSprite()).setVisible(true);
 
-        HashMap<Integer, Spriter.Sprite> spriteHashMap = new HashMap<Integer, Spriter.Sprite>();
-        spriteHashMap.put(0, meteorSprite.getSprite());
-        spriteHashMap.put(3, starSprite.getSprite());
-        spriteHashMap.put(4, ufoSprite.getSprite());
+        HashMap<Integer, BaseSprite> spriteHashMap = new HashMap<Integer, BaseSprite>();
+        spriteHashMap.put(0, meteorSprite);
+        spriteHashMap.put(3, starSprite);
+        spriteHashMap.put(4, ufoSprite);
         MapCreator mapCreator = new MapCreator(map_image, spriteHashMap);
-        mapCreator.add(spriter);
+        mapCreator.add(game.getSpriter());
 
         // Объект для считывания клавиш, нажимаемых пользователем
-        Spriter.Control control = spriter.getControl();
+        Spriter.Control control = game.getSpriter().getControl();
 
         // Отрисовываем все что загрузили
-        spriter.unpause();
+        game.getSpriter().unpause();
 
         while (true) {
-            spriter.beginFrame(); // синхронизация логики и потока отрисовки, чтобы не было графических "артефактов"
+            game.getSpriter().beginFrame(); // синхронизация логики и потока отрисовки, чтобы не было графических "артефактов"
 
             BaseControls baseControls = new BaseControls(player_green);
             if (control.isKeyDown(KeyEvent.VK_LEFT) || control.isKeyDown(KeyEvent.VK_RIGHT)) {
@@ -156,7 +172,7 @@ public class SpaceRace {
             player_green.getSprite().setPos(player_x, player_y);
 
             // Камера следует за игроком
-            spriter.setViewportShift(player_x, player_y);
+            game.getSpriter().setViewportShift(player_x, player_y);
 
             // Искусственно уменьшаем отрыв компьютера от игрока, чтобы было интереснее играть
             int player_step = ai_map[(int) Math.round(player_x)][(int) Math.round(player_y)];
@@ -401,7 +417,7 @@ public class SpaceRace {
                 ufo[i].setPos(ufo_x[i], ufo_y[i]);
             }
 
-            spriter.endFrame(); // конец синхронизации
+            game.getSpriter().endFrame(); // конец синхронизации
             Thread.sleep(30);
         }
     }
