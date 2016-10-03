@@ -1,5 +1,6 @@
 package com.github.drxaos.edu.spacerace.controllers;
 
+import com.github.drxaos.edu.spacerace.models.BaseSprite;
 import com.github.drxaos.spriter.Spriter;
 
 import java.awt.image.BufferedImage;
@@ -12,7 +13,7 @@ import static com.github.drxaos.edu.spacerace.models.Core.*;
  */
 public class MapCreator implements Creator {
     private BufferedImage map_image;
-    private HashMap<Integer, Spriter.Sprite> hashMap;
+    private HashMap<Integer, BaseSprite> hashMap;
 
     private int wall_counter = 0;
     private int ufo_counter = 0;
@@ -21,7 +22,7 @@ public class MapCreator implements Creator {
         this.map_image = map_image;
     }
 
-    public MapCreator(BufferedImage map_image, HashMap<Integer, Spriter.Sprite> hashMap) {
+    public MapCreator(BufferedImage map_image, HashMap<Integer, BaseSprite> hashMap) {
         this.map_image = map_image;
         this.hashMap = hashMap;
     }
@@ -38,7 +39,7 @@ public class MapCreator implements Creator {
      * @param spriter
      * @param hashMap map where key is case for sprite
      */
-    public void add(Spriter spriter, HashMap<Integer, Spriter.Sprite> hashMap) {
+    public void add(Spriter spriter, HashMap<Integer, BaseSprite> hashMap) {
         for (int y = 0; y < 100; y++) {
             for (int x = 0; x < 100; x++) {
                 int[] pixel = new int[4]; // RGBA
@@ -48,7 +49,7 @@ public class MapCreator implements Creator {
                 switch (type) {
                     case (0):
                         // Черный - Стена
-                        hashMap.get(0).createGhost().setPos(x, y).setVisible(true);
+                        hashMap.get(0).makeVisible(x, y);
                         wall_x[wall_counter] = x;
                         wall_y[wall_counter] = y;
                         wall_counter++;
@@ -76,11 +77,12 @@ public class MapCreator implements Creator {
                     case (3):
                         // Желтый - Звезды
                         // у всех звезд разный размер, поэтому вместо createGhost() - clone() (у каждой звезды своя копия изображения)
-                        hashMap.get(3).clone().setPos(x, y).setWidthProportional(Math.random() * 0.4 + 0.4).setVisible(true);
+                        hashMap.get(3).makeVisibleClone(x, y, Math.random() * 0.4 + 0.4);
                         break;
                     case (4):
                         // Синий - НЛО
-                        ufo[ufo_counter] = hashMap.get(4).createGhost().setPos(x, y).setVisible(true);
+                        hashMap.get(4).makeVisible(x, y);
+                        ufo[ufo_counter] = hashMap.get(4).getSprite();
                         ufo_x[ufo_counter] = x;
                         ufo_y[ufo_counter] = y;
                         ufo_vx[ufo_counter] = 0;
@@ -177,7 +179,7 @@ public class MapCreator implements Creator {
         this.wall_counter = wall_counter;
     }
 
-    public void setHashMap(HashMap<Integer, Spriter.Sprite> hashMap) {
+    public void setHashMap(HashMap<Integer, BaseSprite> hashMap) {
         this.hashMap = hashMap;
     }
 }

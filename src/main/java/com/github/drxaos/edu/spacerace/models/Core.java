@@ -6,6 +6,8 @@ import com.github.drxaos.spriter.Spriter;
  * Created by kotvaska on 25.09.2016.
  */
 public class Core {
+    public final static String GAME_NAME = "Space Race";
+
     // при наложении спрайты с меньшим номером слоя перекрываются спрайтами с большим номером слоя
     public final static int
             LAYER_BG = 0,
