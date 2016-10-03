@@ -20,20 +20,23 @@ public class BaseSprite implements Creator {
     private double objectWidth;
     private double objectHeight;
 
-    public BaseSprite(String img, int layer, double imageCenterX, double imageCenterY,
-                      double objectWidth, double objectHeight) {
+    public BaseSprite(String img) {
         this.imgName = img;
-        this.layer = layer;
-        this.imageCenterX = imageCenterX;
-        this.imageCenterY = imageCenterY;
-        this.objectWidth = objectWidth;
-        this.objectHeight = objectHeight;
+        layer = -1;
+        imageCenterX = -1.0;
+        imageCenterY = -1.0;
+        objectWidth = -1.0;
+        objectHeight = -1.0;
         setImg();
     }
 
     @Override
     public void add(Spriter spriter) {
-        sprite = spriter.createSprite(getImg(), imageCenterX, imageCenterY, objectWidth).setLayer(layer);
+        if (layer != -1) {
+            sprite = spriter.createSprite(getImg(), imageCenterX, imageCenterY, objectWidth).setLayer(layer);
+        } else {
+            sprite = spriter.createSprite(getImg(), imageCenterX, imageCenterY, objectWidth);
+        }
     }
 
     public void addProto(Spriter spriter) {
@@ -65,5 +68,25 @@ public class BaseSprite implements Creator {
 
     public Spriter.Sprite getSprite() {
         return sprite;
+    }
+
+    public void setLayer(int layer) {
+        this.layer = layer;
+    }
+
+    public void setImageCenterX(double imageCenterX) {
+        this.imageCenterX = imageCenterX;
+    }
+
+    public void setImageCenterY(double imageCenterY) {
+        this.imageCenterY = imageCenterY;
+    }
+
+    public void setObjectWidth(double objectWidth) {
+        this.objectWidth = objectWidth;
+    }
+
+    public void setObjectHeight(double objectHeight) {
+        this.objectHeight = objectHeight;
     }
 }

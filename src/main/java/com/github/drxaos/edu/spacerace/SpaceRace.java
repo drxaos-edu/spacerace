@@ -72,14 +72,43 @@ public class SpaceRace {
         // Загружаем картинки
         BufferedImage tail_image = SpriterUtils.loadImageFromResource("/tail.png");
         BufferedImage map_image = SpriterUtils.loadImageFromResource("/map.png");
-        Spriter.Sprite trg = spriter.createSprite(SpriterUtils.loadImageFromResource("/point.png"), 256 / 2, 256 / 2, 0.5);
+        BaseSprite trg = new BaseSprite("/point.png");
+        trg.setImageCenterX(256 / 2);
+        trg.setImageCenterY(256 / 2);
+        trg.setObjectWidth(0.5);
+        trg.add(spriter);
 
         // Объекты
-        BaseSprite player_green = new BaseSprite("/player-green.png", LAYER_SHIP, 40, 50, 1, 1);
-        BaseSprite player_red = new BaseSprite("/player-red.png", LAYER_SHIP, 40, 50, 1, 1);
-        BaseSprite ufoSprite = new BaseSprite("/ufo.png", LAYER_UFO, 45, 45, 1, 1);
-        BaseSprite starSprite = new BaseSprite("/star.png", LAYER_STAR, 50, 50, 0.5, 0.5);
-        BaseSprite meteorSprite = new BaseSprite("/meteor.png", LAYER_WALL, 50, 50, 1, 1);
+        BaseSprite player_green = new BaseSprite("/player-green.png");
+        player_green.setLayer(LAYER_SHIP);
+        player_green.setImageCenterX(40);
+        player_green.setImageCenterY(50);
+        player_green.setObjectWidth(1);
+        player_green.setObjectHeight(1);
+        BaseSprite player_red = new BaseSprite("/player-red.png");
+        player_red.setLayer(LAYER_SHIP);
+        player_red.setImageCenterX(40);
+        player_red.setImageCenterY(50);
+        player_red.setObjectWidth(1);
+        player_red.setObjectHeight(1);
+        BaseSprite ufoSprite = new BaseSprite("/ufo.png");
+        ufoSprite.setLayer(LAYER_UFO);
+        ufoSprite.setImageCenterX(45);
+        ufoSprite.setImageCenterY(45);
+        ufoSprite.setObjectWidth(1);
+        ufoSprite.setObjectHeight(1);
+        BaseSprite starSprite = new BaseSprite("/star.png");
+        starSprite.setLayer(LAYER_STAR);
+        starSprite.setImageCenterX(50);
+        starSprite.setImageCenterY(50);
+        starSprite.setObjectWidth(0.5);
+        starSprite.setObjectHeight(0.5);
+        BaseSprite meteorSprite = new BaseSprite("/meteor.png");
+        meteorSprite.setLayer(LAYER_WALL);
+        meteorSprite.setImageCenterX(50);
+        meteorSprite.setImageCenterY(50);
+        meteorSprite.setObjectWidth(1);
+        meteorSprite.setObjectHeight(1);
 
         ufoSprite.addProto(spriter);
         starSprite.addProto(spriter);
@@ -90,10 +119,13 @@ public class SpaceRace {
         player_red.add(spriter);
 
         // Шлейфы кораблей
-        Spriter.Sprite tailPrototype = spriter.createSpriteProto(tail_image, 41, 8).setWidth(0.4).setHeight(0.2).setX(-0.2).setLayer(LAYER_SHIP_TAIL);
+        BaseSprite tailPrototype = new BaseSprite("/tail.png");
+        player_green.setLayer(LAYER_SHIP_TAIL);
+        tailPrototype.setSprite(spriter.createSpriteProto(tail_image, 41, 8).setWidth(0.4).setHeight(0.2).setX(-0.2).setLayer(LAYER_SHIP_TAIL));
+
         // setParent закрепляет спрайт на другом спрайте и центром координат для него становится середина родительского
-        player_green_tail = tailPrototype.clone().setParent(player_green.getSprite()).setVisible(true);
-        player_red_tail = tailPrototype.clone().setParent(player_red.getSprite()).setVisible(true);
+        player_green_tail = tailPrototype.getSprite().clone().setParent(player_green.getSprite()).setVisible(true);
+        player_red_tail = tailPrototype.getSprite().clone().setParent(player_red.getSprite()).setVisible(true);
 
         MapCreator mapCreator = new MapCreator(map_image, meteorSprite.getSprite(), starSprite.getSprite(), ufoSprite.getSprite());
         mapCreator.add(spriter);
