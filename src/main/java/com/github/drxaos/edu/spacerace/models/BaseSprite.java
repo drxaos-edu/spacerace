@@ -87,6 +87,10 @@ public class BaseSprite implements Creator {
         sprite.clone().setPos(x, y).setWidthProportional(w).setVisible(true);
     }
 
+    public Spriter.Sprite makeVisibleForParent(BaseSprite baseSprite) {
+        return sprite.clone().setParent(baseSprite.getSprite()).setVisible(true);
+    }
+
     public void setSprite(Spriter.Sprite sprite) {
         this.sprite = sprite;
     }

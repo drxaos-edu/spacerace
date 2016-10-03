@@ -141,8 +141,8 @@ public class SpaceRace {
         tailPrototype.addProtoWithAllSetProperties(game.getSpriter());
 
         // setParent закрепляет спрайт на другом спрайте и центром координат для него становится середина родительского
-        player_green_tail = tailPrototype.getSprite().clone().setParent(player_green.getSprite()).setVisible(true);
-        player_red_tail = tailPrototype.getSprite().clone().setParent(player_red.getSprite()).setVisible(true);
+        player_green_tail = tailPrototype.makeVisibleForParent(player_green);
+        player_red_tail = tailPrototype.makeVisibleForParent(player_red);
 
         HashMap<Integer, BaseSprite> spriteHashMap = new HashMap<Integer, BaseSprite>();
         spriteHashMap.put(0, meteorSprite);
@@ -155,10 +155,10 @@ public class SpaceRace {
         Spriter.Control control = game.getSpriter().getControl();
 
         // Отрисовываем все что загрузили
-        game.getSpriter().unpause();
+        game.playDraw();
 
         while (true) {
-            game.getSpriter().beginFrame(); // синхронизация логики и потока отрисовки, чтобы не было графических "артефактов"
+            game.startDraw(); // синхронизация логики и потока отрисовки, чтобы не было графических "артефактов"
 
             BaseControls baseControls = new BaseControls(player_green);
             if (control.isKeyDown(KeyEvent.VK_LEFT) || control.isKeyDown(KeyEvent.VK_RIGHT)) {
@@ -417,7 +417,7 @@ public class SpaceRace {
                 ufo[i].setPos(ufo_x[i], ufo_y[i]);
             }
 
-            game.getSpriter().endFrame(); // конец синхронизации
+            game.stopDraw(); // конец синхронизации
             Thread.sleep(30);
         }
     }
