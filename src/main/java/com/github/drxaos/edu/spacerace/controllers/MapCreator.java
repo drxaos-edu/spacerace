@@ -3,6 +3,7 @@ package com.github.drxaos.edu.spacerace.controllers;
 import com.github.drxaos.spriter.Spriter;
 
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 
 import static com.github.drxaos.edu.spacerace.models.Core.*;
 
@@ -11,24 +12,33 @@ import static com.github.drxaos.edu.spacerace.models.Core.*;
  */
 public class MapCreator implements Creator {
     private BufferedImage map_image;
-    private Spriter.Sprite wallPrototype;
-    private Spriter.Sprite starPrototype;
-    private Spriter.Sprite ufoPrototype;
+    private HashMap<Integer, Spriter.Sprite> hashMap;
 
     private int wall_counter = 0;
     private int ufo_counter = 0;
 
-    public MapCreator(BufferedImage map_image, Spriter.Sprite wallPrototype,
-                      Spriter.Sprite starPrototype, Spriter.Sprite ufoPrototype) {
-
+    public MapCreator(BufferedImage map_image) {
         this.map_image = map_image;
-        this.wallPrototype = wallPrototype;
-        this.starPrototype = starPrototype;
-        this.ufoPrototype = ufoPrototype;
+    }
+
+    public MapCreator(BufferedImage map_image, HashMap<Integer, Spriter.Sprite> hashMap) {
+        this.map_image = map_image;
+        this.hashMap = hashMap;
     }
 
     @Override
     public void add(Spriter spriter) {
+        if (hashMap != null) {
+            add(spriter, hashMap);
+        }
+    }
+
+    /**
+     *  Create map
+     * @param spriter
+     * @param hashMap map where key is case for sprite
+     */
+    public void add(Spriter spriter, HashMap<Integer, Spriter.Sprite> hashMap) {
         for (int y = 0; y < 100; y++) {
             for (int x = 0; x < 100; x++) {
                 int[] pixel = new int[4]; // RGBA
@@ -38,7 +48,7 @@ public class MapCreator implements Creator {
                 switch (type) {
                     case (0):
                         // Черный - Стена
-                        wallPrototype.createGhost().setPos(x, y).setVisible(true);
+                        hashMap.get(0).createGhost().setPos(x, y).setVisible(true);
                         wall_x[wall_counter] = x;
                         wall_y[wall_counter] = y;
                         wall_counter++;
@@ -66,11 +76,11 @@ public class MapCreator implements Creator {
                     case (3):
                         // Желтый - Звезды
                         // у всех звезд разный размер, поэтому вместо createGhost() - clone() (у каждой звезды своя копия изображения)
-                        starPrototype.clone().setPos(x, y).setWidthProportional(Math.random() * 0.4 + 0.4).setVisible(true);
+                        hashMap.get(3).clone().setPos(x, y).setWidthProportional(Math.random() * 0.4 + 0.4).setVisible(true);
                         break;
                     case (4):
                         // Синий - НЛО
-                        ufo[ufo_counter] = ufoPrototype.createGhost().setPos(x, y).setVisible(true);
+                        ufo[ufo_counter] = hashMap.get(4).createGhost().setPos(x, y).setVisible(true);
                         ufo_x[ufo_counter] = x;
                         ufo_y[ufo_counter] = y;
                         ufo_vx[ufo_counter] = 0;
@@ -92,6 +102,11 @@ public class MapCreator implements Creator {
             }
         }
 
+        applyWaveAlgorithm();
+
+    }
+
+    private void applyWaveAlgorithm() {
         // Размечаем карту для управления кораблем компьютера
         // Применен "Волновой алгоритм" для окрестности фон Неймана
         // https://ru.wikipedia.org/wiki/%D0%90%D0%BB%D0%B3%D0%BE%D1%80%D0%B8%D1%82%D0%BC_%D0%9B%D0%B8
@@ -131,6 +146,7 @@ public class MapCreator implements Creator {
                 }
             }
         }
+
     }
 
     public void print() {
@@ -159,5 +175,9 @@ public class MapCreator implements Creator {
 
     public void setWall_counter(int wall_counter) {
         this.wall_counter = wall_counter;
+    }
+
+    public void setHashMap(HashMap<Integer, Spriter.Sprite> hashMap) {
+        this.hashMap = hashMap;
     }
 }

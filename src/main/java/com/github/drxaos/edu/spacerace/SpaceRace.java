@@ -9,6 +9,7 @@ import com.github.drxaos.spriter.SpriterUtils;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 
 import static com.github.drxaos.edu.spacerace.models.Core.*;
 
@@ -127,7 +128,11 @@ public class SpaceRace {
         player_green_tail = tailPrototype.getSprite().clone().setParent(player_green.getSprite()).setVisible(true);
         player_red_tail = tailPrototype.getSprite().clone().setParent(player_red.getSprite()).setVisible(true);
 
-        MapCreator mapCreator = new MapCreator(map_image, meteorSprite.getSprite(), starSprite.getSprite(), ufoSprite.getSprite());
+        HashMap<Integer, Spriter.Sprite> spriteHashMap = new HashMap<Integer, Spriter.Sprite>();
+        spriteHashMap.put(0, meteorSprite.getSprite());
+        spriteHashMap.put(3, starSprite.getSprite());
+        spriteHashMap.put(4, ufoSprite.getSprite());
+        MapCreator mapCreator = new MapCreator(map_image, spriteHashMap);
         mapCreator.add(spriter);
 
         // Объект для считывания клавиш, нажимаемых пользователем
