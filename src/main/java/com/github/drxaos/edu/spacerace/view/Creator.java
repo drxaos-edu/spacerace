@@ -1,4 +1,4 @@
-package com.github.drxaos.edu.spacerace.controllers;
+package com.github.drxaos.edu.spacerace.view;
 
 import com.github.drxaos.spriter.Spriter;
 

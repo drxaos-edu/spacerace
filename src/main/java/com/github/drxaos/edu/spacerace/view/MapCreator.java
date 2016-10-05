@@ -1,6 +1,7 @@
-package com.github.drxaos.edu.spacerace.controllers;
+package com.github.drxaos.edu.spacerace.view;
 
 import com.github.drxaos.edu.spacerace.models.BaseSprite;
+import com.github.drxaos.edu.spacerace.models.Player;
 import com.github.drxaos.spriter.Spriter;
 
 import java.awt.image.BufferedImage;
@@ -35,7 +36,8 @@ public class MapCreator implements Creator {
     }
 
     /**
-     *  Create map
+     * Create map
+     *
      * @param spriter
      * @param hashMap map where key is case for sprite
      */
@@ -50,29 +52,21 @@ public class MapCreator implements Creator {
                     case (0):
                         // Черный - Стена
                         hashMap.get(0).makeVisible(x, y);
-                        wall_x[wall_counter] = x;
-                        wall_y[wall_counter] = y;
+                        wall[wall_counter] = hashMap.get(0);
+                        wall[wall_counter].setX(x);
+                        wall[wall_counter].setY(y);
                         wall_counter++;
 
                         ai_map[x][y] = -1; // стена
                         break;
                     case (1):
                         // Красный - Красный корабль
-                        player_red.setPos(x, y);
-                        computer_a = -Math.PI / 2;
-                        computer_x = x;
-                        computer_y = y;
-                        computer_vx = 0;
-                        computer_vy = 0;
+                        addPlayer((Player) hashMap.get(1), x, y, 0, 0, -Math.PI / 2);
                         break;
                     case (2):
                         // Зеленый - Зеленый корабль
-                        player_green.setPos(x, y).setAngle(-Math.PI / 2);
-                        player_a = -Math.PI / 2;
-                        player_x = x;
-                        player_y = y;
-                        player_vx = 0;
-                        player_vy = 0;
+                        addPlayer((Player) hashMap.get(2), x, y, 0, 0, -Math.PI / 2);
+                        hashMap.get(2).rotate(Math.PI / 2);
                         break;
                     case (3):
                         // Желтый - Звезды
@@ -82,11 +76,9 @@ public class MapCreator implements Creator {
                     case (4):
                         // Синий - НЛО
                         hashMap.get(4).makeVisible(x, y);
-                        ufo[ufo_counter] = hashMap.get(4).getSprite();
-                        ufo_x[ufo_counter] = x;
-                        ufo_y[ufo_counter] = y;
-                        ufo_vx[ufo_counter] = 0;
-                        ufo_vy[ufo_counter] = 0;
+                        ufo[ufo_counter] = (Player)hashMap.get(4);
+                        addPlayer(ufo[ufo_counter], x, y, 0, 0, 0);
+                        ufo[ufo_counter].rotate(Math.PI * 2 * Math.random());
                         ufo_counter++;
                         break;
                     case (5):
@@ -149,6 +141,16 @@ public class MapCreator implements Creator {
             }
         }
 
+    }
+
+
+    public void addPlayer(Player player, double x, double y, double vx, double vy, double speed) {
+        player.getSprite().setPos(x, y);
+        player.setSpeed(speed);
+        player.setX(x);
+        player.setY(y);
+        player.setVx(vx);
+        player.setVy(vy);
     }
 
     public void print() {
