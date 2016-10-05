@@ -1,7 +1,7 @@
 package com.github.drxaos.edu.spacerace;
 
-import com.github.drxaos.edu.spacerace.controllers.BaseControls;
-import com.github.drxaos.edu.spacerace.controllers.MapCreator;
+import com.github.drxaos.edu.spacerace.models.Player;
+import com.github.drxaos.edu.spacerace.view.MapCreator;
 import com.github.drxaos.edu.spacerace.models.BaseSprite;
 import com.github.drxaos.edu.spacerace.models.BasicGame;
 import com.github.drxaos.spriter.Spriter;
@@ -91,19 +91,19 @@ public class SpaceRace {
         trg.add(game.getSpriter());
 
         // Объекты
-        BaseSprite player_green = new BaseSprite("/player-green.png");
+        Player player_green = new Player("/player-green.png");
         player_green.setLayer(LAYER_SHIP);
         player_green.setImageCenterX(40);
         player_green.setImageCenterY(50);
         player_green.setObjectWidth(1);
         player_green.setObjectHeight(1);
-        BaseSprite player_red = new BaseSprite("/player-red.png");
+        Player player_red = new Player("/player-red.png");
         player_red.setLayer(LAYER_SHIP);
         player_red.setImageCenterX(40);
         player_red.setImageCenterY(50);
         player_red.setObjectWidth(1);
         player_red.setObjectHeight(1);
-        BaseSprite ufoSprite = new BaseSprite("/ufo.png");
+        Player ufoSprite = new Player("/ufo.png");
         ufoSprite.setLayer(LAYER_UFO);
         ufoSprite.setImageCenterX(45);
         ufoSprite.setImageCenterY(45);
@@ -141,11 +141,15 @@ public class SpaceRace {
         tailPrototype.addProtoWithAllSetProperties(game.getSpriter());
 
         // setParent закрепляет спрайт на другом спрайте и центром координат для него становится середина родительского
-        player_green_tail = tailPrototype.makeVisibleForParent(player_green);
-        player_red_tail = tailPrototype.makeVisibleForParent(player_red);
+        BaseSprite player_green_tail = new BaseSprite("");
+        player_green_tail.setSprite(tailPrototype.makeVisibleForParent(player_green));
+        BaseSprite player_red_tail = new BaseSprite("");
+        player_red_tail.setSprite(tailPrototype.makeVisibleForParent(player_red));
 
         HashMap<Integer, BaseSprite> spriteHashMap = new HashMap<Integer, BaseSprite>();
         spriteHashMap.put(0, meteorSprite);
+        spriteHashMap.put(1, player_green);
+        spriteHashMap.put(2, player_red);
         spriteHashMap.put(3, starSprite);
         spriteHashMap.put(4, ufoSprite);
         MapCreator mapCreator = new MapCreator(map_image, spriteHashMap);
@@ -160,45 +164,33 @@ public class SpaceRace {
         while (true) {
             game.startDraw(); // синхронизация логики и потока отрисовки, чтобы не было графических "артефактов"
 
-            BaseControls baseControls = new BaseControls(player_green);
-            if (control.isKeyDown(KeyEvent.VK_LEFT) || control.isKeyDown(KeyEvent.VK_RIGHT)) {
-                baseControls.setDirection(KeyEvent.KEY_PRESSED);
+            if (control.isKeyDown(KeyEvent.VK_LEFT)) {
+                // влево
+                player_green.addSpeed(-0.06);
             }
-            baseControls.setAcceleration(control.isKeyDown(KeyEvent.VK_UP));
+            if (control.isKeyDown(KeyEvent.VK_RIGHT)) {
+                // вправо
+                player_green.addSpeed(0.06);
+            }
+            if (control.isKeyDown(KeyEvent.VK_UP)) {
+                // ускорение
+                player_green.addAcceleration(Math.cos(player_green.getSpeed()) * 0.005,
+                        Math.sin(player_green.getSpeed()) * 0.005);
+
+                player_green_tail.setVisibility(true);
+            } else {
+                // нет ускорения - нет шлейфа
+                player_green_tail.setVisibility(false);
+            }
 
             // Двигаем корабль игрока
-            player_x += player_vx;
-            player_y += player_vy;
-            player_green.getSprite().setPos(player_x, player_y);
+            player_green.move();
 
             // Камера следует за игроком
-            game.getSpriter().setViewportShift(player_x, player_y);
+            game.moveCamera(player_green.getX(), player_green.getY());
 
             // Искусственно уменьшаем отрыв компьютера от игрока, чтобы было интереснее играть
-            int player_step = ai_map[(int) Math.round(player_x)][(int) Math.round(player_y)];
-            int computer_step = ai_map[(int) Math.round(computer_x)][(int) Math.round(computer_y)];
-            if (computer_step - player_step > 20) {
-                double deltaX = computer_x - player_x;
-                double deltaY = computer_y - player_y;
-                double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                if (distance > 15) { // корабль компьютера сейчас не видно
-                    computer_step = player_step + 20; // надо отставать не больше чем на 20 шагов
-                    // ищем подходящее место для телепортации
-                    for (int x = 1; x < 99; x++) {
-                        for (int y = 1; y < 99; y++) {
-                            if (ai_map[x][y] == computer_step) {
-                                deltaX = x - player_x;
-                                deltaY = y - player_y;
-                                distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                                if (distance > 15) { // только если игрок не видит эту клетку
-                                    computer_x = x;
-                                    computer_y = y;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            player_green.overheadCompetitive(player_red);
 
             // Корабль компьютера ищет минимальный номер в прямой видимости
             int target_x = 0;
@@ -206,8 +198,8 @@ public class SpaceRace {
             int min = Integer.MAX_VALUE;
             // смотрим в разные стороны и ищем минимальный номер
             for (int a = 0; a < 18; a++) { // 18 шагов по 20 градусов
-                double search_x = computer_x;
-                double search_y = computer_y;
+                double search_x = player_red.getX();
+                double search_y = player_red.getY();
                 while (true) {
                     int sx = (int) Math.round(search_x);
                     int sy = (int) Math.round(search_y);
@@ -230,14 +222,16 @@ public class SpaceRace {
             //trg.setPos(target_x, target_y).setVisible(true);
 
             // текущая скорость
-            double computer_current_velocity = Math.sqrt(computer_vx * computer_vx + computer_vy * computer_vy);
-            double computer_current_velocity_angle = Math.atan2(computer_vy, computer_vx);
+            double computer_current_velocity
+                    = Math.sqrt(Math.pow(player_red.getVx(), 2) + Math.pow(player_red.getVy(), 2));
+            double computer_current_velocity_angle
+                    = Math.atan2(player_green.getVy(), player_green.getVx());
 
             // азимут до цели
-            double target_angle = Math.atan2(target_y - computer_y, target_x - computer_x);
+            double target_angle = Math.atan2(target_y - player_red.getY(), target_x - player_red.getX());
 
             // поправка от текущего угла
-            double angle_shift = target_angle - computer_a;
+            double angle_shift = target_angle - player_red.getSpeed();
 
             // поправка от текущего угла скорости
             double velocity_angle_shift = target_angle - computer_current_velocity_angle;
@@ -252,169 +246,59 @@ public class SpaceRace {
 
             if (angle_shift > 0.1) {
                 // направо
-                computer_a += 0.06;
+                player_red.addSpeed(0.06);
             }
             if (angle_shift < -0.1) {
                 // налево
-                computer_a -= 0.06;
+                player_red.addSpeed(-0.06);
             }
             // ускоряемся, если скорость < 0.3 или если она направлена не на цель
             boolean should_accelerate = (computer_current_velocity < 0.3 || Math.cos(velocity_angle_shift) < 0.6);
             if (Math.abs(angle_shift) < Math.PI / 4 && should_accelerate) {
                 // угол незначительный, можно включать ускорение
-                computer_vx += Math.cos(computer_a) * 0.005;
-                computer_vy += Math.sin(computer_a) * 0.005;
-                player_red_tail.setVisible(true);
+                player_red.addAcceleration(Math.cos(player_red.getSpeed()) * 0.005, Math.sin(player_red.getSpeed()) * 0.005);
+                player_red_tail.setVisibility(true);
             } else {
                 // нет ускорения - нет шлейфа
-                player_red_tail.setVisible(false);
+                player_red_tail.setVisibility(false);
             }
-            player_red.getSprite().setAngle(computer_a);
+            player_red.rotate(player_red.getSpeed());
 
             // Двигаем корабль компьютера
-            computer_x += computer_vx;
-            computer_y += computer_vy;
-            player_red.getSprite().setPos(computer_x, computer_y);
+            player_red.move();
 
             // Наблюдение за кораблем компьютера (для отладки)
             //spriter.setViewportShift(computer_x, computer_y);
 
             // Столкновения игрока с астероидами
             for (int i = 0; i < mapCreator.getWall_counter(); i++) {
-                double deltaX = wall_x[i] - player_x;
-                double deltaY = wall_y[i] - player_y;
-                double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                // если расстояние <= 1, значит объекты столкнулись
-                if (distance <= 1) {
-                    // расчет изменения скоростей шаров при соударении
-                    double dx = wall_x[i] - player_x;
-                    double dy = wall_y[i] - player_y;
-                    double angle = Math.atan2(dy, dx);
-                    double targetX = player_x + Math.cos(angle);
-                    double targetY = player_y + Math.sin(angle);
-                    double ax = (targetX - wall_x[i]);
-                    double ay = (targetY - wall_y[i]);
-                    // изменяется скорость только у игрока
-                    player_vx -= ax;
-                    player_vy -= ay;
-                    // гасим скорость, чтобы игрока не уносило обратно
-                    player_vx *= 0.7;
-                    player_vy *= 0.7;
-                }
+                player_green.collapse(wall[i], 0.7, 0.7, 0);
             }
 
             // Столкновения игрока с НЛО
             for (int i = 0; i < mapCreator.getUfo_counter(); i++) {
-                double deltaX = ufo_x[i] - player_x;
-                double deltaY = ufo_y[i] - player_y;
-                double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                // если расстояние <= 1, значит объекты столкнулись
-                if (distance <= 1) {
-                    // расчет изменения скоростей шаров при соударении
-                    double dx = ufo_x[i] - player_x;
-                    double dy = ufo_y[i] - player_y;
-                    double angle = Math.atan2(dy, dx);
-                    double targetX = player_x + Math.cos(angle);
-                    double targetY = player_y + Math.sin(angle);
-                    double ax = (targetX - ufo_x[i]);
-                    double ay = (targetY - ufo_y[i]);
-                    // изменяется скорость игрока
-                    player_vx -= ax;
-                    player_vy -= ay;
-                    // гасим скорость, чтобы игрока не уносило обратно
-                    player_vx *= 0.7;
-                    player_vy *= 0.7;
-                    // изменяется скорость НЛО
-                    ufo_vx[i] += ax;
-                    ufo_vy[i] += ay;
-                }
+                player_green.collapse(ufo[i], 0.7, 0.7, 1);
             }
 
             // Столкновения компьютера с астероидами
             for (int i = 0; i < mapCreator.getWall_counter(); i++) {
-                double deltaX = wall_x[i] - computer_x;
-                double deltaY = wall_y[i] - computer_y;
-                double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                // если расстояние <= 1, значит объекты столкнулись
-                if (distance <= 1) {
-                    // расчет изменения скоростей шаров при соударении
-                    double dx = wall_x[i] - computer_x;
-                    double dy = wall_y[i] - computer_y;
-                    double angle = Math.atan2(dy, dx);
-                    double targetX = computer_x + Math.cos(angle);
-                    double targetY = computer_y + Math.sin(angle);
-                    double ax = (targetX - wall_x[i]);
-                    double ay = (targetY - wall_y[i]);
-                    // изменяется скорость только у компьютера
-                    computer_vx -= ax;
-                    computer_vy -= ay;
-                    // гасим скорость, чтобы корабль не уносило обратно
-                    computer_vx *= 0.7;
-                    computer_vy *= 0.7;
-                }
+                player_red.collapse(wall[i], 0.7, 0.7, 0);
             }
 
             // Столкновения компьютера с НЛО
             for (int i = 0; i < mapCreator.getUfo_counter(); i++) {
-                double deltaX = ufo_x[i] - computer_x;
-                double deltaY = ufo_y[i] - computer_y;
-                double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                // если расстояние <= 1, значит объекты столкнулись
-                if (distance <= 1) {
-                    // расчет изменения скоростей шаров при соударении
-                    double dx = ufo_x[i] - computer_x;
-                    double dy = ufo_y[i] - computer_y;
-                    double angle = Math.atan2(dy, dx);
-                    double targetX = computer_x + Math.cos(angle);
-                    double targetY = computer_y + Math.sin(angle);
-                    double ax = (targetX - ufo_x[i]);
-                    double ay = (targetY - ufo_y[i]);
-                    // изменяется скорость компьютера
-                    computer_vx -= ax;
-                    computer_vy -= ay;
-                    // гасим скорость, чтобы корабль не уносило обратно
-                    computer_vx *= 0.7;
-                    computer_vy *= 0.7;
-                    // изменяется скорость НЛО
-                    ufo_vx[i] += ax;
-                    ufo_vy[i] += ay;
-                }
+                player_red.collapse(ufo[i], 0.7, 0.7, 1);
             }
 
             // Столкновения игрока с компьютером
-            double deltaX = player_x - computer_x;
-            double deltaY = player_y - computer_y;
-            double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            // если расстояние <= 1, значит объекты столкнулись
-            if (distance <= 1) {
-                // расчет изменения скоростей шаров при соударении
-                double dx = player_x - computer_x;
-                double dy = player_y - computer_y;
-                double angle = Math.atan2(dy, dx);
-                double targetX = computer_x + Math.cos(angle);
-                double targetY = computer_y + Math.sin(angle);
-                double ax = (targetX - player_x);
-                double ay = (targetY - player_y);
-                // изменяются скорости кораблей
-                computer_vx -= ax;
-                computer_vy -= ay;
-                player_vx += ax;
-                player_vy += ay;
-                // гасим скорости
-                computer_vx *= 0.7;
-                computer_vy *= 0.7;
-                player_vx *= 0.7;
-                player_vy *= 0.7;
-            }
+            player_green.collapse(player_red, 0.7, 0.7, 1);
 
             for (int i = 0; i < mapCreator.getUfo_counter(); i++) {
                 // Двигаем НЛО
-                ufo_x[i] += ufo_vx[i];
-                ufo_y[i] += ufo_vy[i];
+                ufo[i].move();
                 // гасим скорость НЛО, чтобы он быстрее остановился
-                ufo_vx[i] *= 0.9;
-                ufo_vy[i] *= 0.9;
-                ufo[i].setPos(ufo_x[i], ufo_y[i]);
+                ufo[i].multiplyAcceleration(0.9, 0.9);
+                ufo[i].positionate();
             }
 
             game.stopDraw(); // конец синхронизации
