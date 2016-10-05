@@ -1,6 +1,6 @@
 package com.github.drxaos.edu.spacerace.models;
 
-import com.github.drxaos.edu.spacerace.controllers.Creator;
+import com.github.drxaos.edu.spacerace.view.Creator;
 import com.github.drxaos.spriter.Spriter;
 import com.github.drxaos.spriter.SpriterUtils;
 
@@ -14,15 +14,15 @@ public class BaseSprite implements Creator {
     private String imgName;
     private int layer;
     private BufferedImage img;
-    private Spriter.Sprite sprite;
+    protected Spriter.Sprite sprite;
     private double imageCenterX;
     private double imageCenterY;
     private double objectWidth;
     private double objectHeight;
     private double width;
     private double height;
-    private double x;
-    private double y;
+    protected double x;
+    protected double y;
 
     public BaseSprite(String img) {
         this.imgName = img;
@@ -150,4 +150,21 @@ public class BaseSprite implements Creator {
     public void setX(double x) {
         this.x = x;
     }
+
+    public void setVisibility(boolean isVisible) {
+        sprite.setVisible(isVisible);
+    }
+
+    public void rotate(double angle) {
+        sprite.setAngle(angle);
+    }
+
+    public void positionate(double x, double y) {
+        sprite.setPos(x, y);
+    }
+
+    public void positionate() {
+        sprite.setPos(x, y);
+    }
+
 }
