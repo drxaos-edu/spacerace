@@ -46,4 +46,8 @@ public class BasicGame {
     public void setBackground(Color background) {
         spriter.setBackgroundColor(Color.BLACK);
     }
+
+    public void moveCamera(double x, double y) {
+        spriter.setViewportShift(x, y);
+    }
 }
